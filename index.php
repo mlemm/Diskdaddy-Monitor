@@ -2,28 +2,29 @@
     /* 
     Plugin Name: Diskdaddy.com Web Monitor Plugin
     Plugin URI: http://www.diskdaddy.com 
-    Version: 1.7.1
+    Version: 1.6.1
     Author: Markus Lemm
-    Description: Monitor page for last user login, page/post updates, unique ip counter, wordpress version, updates, support expiry date
+    Description: Monitor page for last user login, page/post updates, unique ip counter, wordpress version, updates, support expiry date - October 22, 2014
     Author URI: http://www.markuslemm.com
-    */
-
-    /*
-        Copyright 2014 - Diskdaddy Software and Web Development
-        Markus Lemm - 26044 - Started October 22,2014
-
     */
 
 
 
 /*
-    -add only @diskdaddy.com user have access to menu
-    - Error checking!!
+
+    Error checking!!
     - variable names and name spaces - wp_diskdaddy_plugin_(variable)
 
 
 */
 
+/*
+    To do:
+        
+            - options page
+                -add a submit info now button
+                -add button to clear tables
+*/
 
         /* CRON */
 
@@ -39,43 +40,38 @@
         $fSetup = tmpfile();
         //put in the db info
 
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_ftp_upload_time';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput = 'last_ftp_upload_time|' . $result . '*';
-
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update_time';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_post_update_time|' . $result . '*';
+        $fileOutput = 'last_post_update_time|' . $result . '-';
         
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_post_update|' . $result . '*';
+        $fileOutput .= 'last_post_update|' . $result . '-';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login_time';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_user_login_time|' . $result . '*';
+        $fileOutput .= 'last_user_login_time|' . $result . '-';
         
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_user_login|' . $result . '*';
+        $fileOutput .= 'last_user_login|' . $result . '-';
 
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'site_address';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'site_address|' . $result . '*';
+        $fileOutput .= 'site_address|' . $result . '-';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'wordpress_version';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'wordpress_version|' . $result . '*';
+        $fileOutput .= 'wordpress_version|' . $result . '-';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'plugins_to_update';";
         $result = $wpdb->get_var($sql);
@@ -101,7 +97,7 @@
         if ((!$conn_id) || (!$login_result)) exit;
         
         //upload the actual file
-        $uploadFileName = get_option('FTPFileName','default.dd');
+        $uploadFileName = get_option('copyright_option_text','default.dd');
         $upload = ftp_fput($conn_id, $uploadFileName, $fSetup, FTP_BINARY);  // upload the file
          
         ftp_close($conn_id); // close the FTP stream   
@@ -162,16 +158,6 @@
         $result = $wpdb->query($sql);
 
         //fill in variables
-        
-
-        $sql = "SELECT * FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_ftp_upload_time';";
-        $result = $wpdb->query($sql);
-        $current_time = time();
-        if( !$result) {
-            //variable does not exist           
-            $sql = "INSERT INTO wp_diskdaddy_plugin_variables (the_key, the_value) VALUES ('last_ftp_upload_time', '$current_time');";
-            $result = $wpdb->query($sql);
-        }
 
         //LAST POST UPDATE TIME
         $sql = "SELECT * FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update_time';";
@@ -298,24 +284,39 @@
     function Disk_Daddy_callOptionsPage() {
       
          
-        echo '<div class="wrap">';
-        echo 'Please edit the info below' ;
-        echo '<form method="post" action="options.php">';
-        settings_fields( 'Disk_Daddy_Plugin-Group' ); 
-        do_settings_fields( 'Disk_Daddy_Plugin-Group', '' );
-        echo '<p>Input filename to use when uploading data (somethingUnique.dd) - <input type="text" name="FTPFileName" value="' . get_option('FTPFileName') .'" />';
-        echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry') .'" />';
-        
-        submit_button();
-        echo '</div>';
-        
+        //get the email of the user that is currently logged in
+        global $current_user;
+        get_currentuserinfo();
+        $emailOfCurrentUser = $current_user->user_email;
+
+        //only display admin options if the user that is logged in is with diskdaddy.com
+        if( strpos($emailOfCurrentUser, 'diskdaddy.com') !== FALSE) {
+
+            echo '<div class="wrap">';
+            echo '<h2>Please edit the info below - Diskdaddy Admin</h2>' ;
+            echo '<form method="post" action="options.php">';
+            settings_fields( 'Disk_Daddy_Plugin-Group' ); 
+            do_settings_fields( 'Disk_Daddy_Plugin-Group', '' );
+            echo '<p>Input filename to use when uploading data (somethingUnique.dd) - <input type="text" name="FTPFileName" value="' . get_option('FTPFileName', 'default.dd') .'" />';
+            echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry', '1979-09-12') .'" />';
+            
+            submit_button();
+            echo '</div>';
+        } else {
+
+            echo '<div class="wrap">';
+            echo '<h2>You are not a Diskdaddy Admin!</h2><p>You do not have permissions to edit these settings' ;
+            
+            echo '</div>';
+
+        }
     
     }
 
 
     function Disk_Daddy_Plugin_Menu() {
     
-      add_options_page('Diskdaddy Plugin Options Menu','Diskdaddy Plugin','manage_options', 'Disk_Daddy_Plugin', 'Disk_Daddy_callOptionsPage');
+      add_options_page('Diskdaddy Plugin Options Menu','Diskdaddy Monitor','manage_options', 'Disk_Daddy_Plugin', 'Disk_Daddy_callOptionsPage');
 
     }
 
@@ -367,8 +368,5 @@
 
     //check for plugin updates
     add_filter ('site_transient_update_plugins', 'display_transient_update_plugins');
-
-    
-
 
 ?>
