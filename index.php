@@ -1,8 +1,8 @@
 <?php  
     /* 
-    Plugin Name: Diskdaddy.com Web Monitor Plugin
+    Plugin Name: Diskdaddy.com Web Monitor
     Plugin URI: http://www.diskdaddy.com 
-    Version: 1.6.1
+    Version: 1.6.2
     Author: Markus Lemm
     Description: Monitor page for last user login, page/post updates, unique ip counter, wordpress version, updates, support expiry date - October 22, 2014
     Author URI: http://www.markuslemm.com
@@ -11,19 +11,14 @@
 
 
 /*
-
-    Error checking!!
-    - variable names and name spaces - wp_diskdaddy_plugin_(variable)
-
-
-*/
-
-/*
     To do:
         
             - options page
                 -add a submit info now button
-                -add button to clear tables
+                -add button to clear table
+            -Error checking!!
+            - last time uploaded to server
+            - 
 */
 
         /* CRON */
@@ -40,38 +35,41 @@
         $fSetup = tmpfile();
         //put in the db info
 
+        $result = time();
+        $fileOutput = 'last_ftp_upload_time|' . $result . '*';
+
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update_time';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput = 'last_post_update_time|' . $result . '-';
+        $fileOutput .= 'last_post_update_time|' . $result . '*';
         
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_post_update|' . $result . '-';
+        $fileOutput .= 'last_post_update|' . $result . '*';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login_time';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_user_login_time|' . $result . '-';
+        $fileOutput .= 'last_user_login_time|' . $result . '*';
         
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'last_user_login|' . $result . '-';
+        $fileOutput .= 'last_user_login|' . $result . '*';
 
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'site_address';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'site_address|' . $result . '-';
+        $fileOutput .= 'site_address|' . $result . '*';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'wordpress_version';";
         $result = $wpdb->get_var($sql);
         
-        $fileOutput .= 'wordpress_version|' . $result . '-';
+        $fileOutput .= 'wordpress_version|' . $result . '*';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'plugins_to_update';";
         $result = $wpdb->get_var($sql);
@@ -164,7 +162,7 @@
         $result = $wpdb->query($sql);
         if( !$result) {
             //variable does not exist           
-            $sql = "INSERT INTO wp_diskdaddy_plugin_variables (the_key, the_value) VALUES ('last_post_update_time', '123');";
+            $sql = "INSERT INTO wp_diskdaddy_plugin_variables (the_key, the_value) VALUES ('last_post_update_time', '0');";
             $result = $wpdb->query($sql);
         }
 
