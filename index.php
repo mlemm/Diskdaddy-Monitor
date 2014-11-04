@@ -2,24 +2,20 @@
     /* 
     Plugin Name: Diskdaddy.com Web Monitor
     Plugin URI: http://www.diskdaddy.com 
-    Version: 1.6.2
+    Version: 1.6.4
     Author: Markus Lemm
-    Description: Monitor page for last user login, page/post updates, unique ip counter, wordpress version, updates, support expiry date - October 22, 2014
+    Description: Monitor page for last user login, page/post updates, wordpress version, updates, support expiry date
     Author URI: http://www.markuslemm.com
     */
 
+    /* 
+        Markus Lemm - mlemm@diskdaddy.com - 260444
+        Created November 3, 2014
+    */
 
-
-/*
-    To do:
-        
-            - options page
-                -add a submit info now button
-                -add button to clear table
-            -Error checking!!
-            - last time uploaded to server
-            - 
-*/
+        /*
+            Submit thru html get method - simple and fast
+        */
 
         /* CRON */
 
@@ -35,8 +31,10 @@
         $fSetup = tmpfile();
         //put in the db info
 
+        $fileOutput = 'support_contract_expiry|' . get_option('Support_Contract_Expiry', '2020-12-31') . '*';
+
         $result = time();
-        $fileOutput = 'last_ftp_upload_time|' . $result . '*';
+        $fileOutput .= 'last_ftp_upload_time|' . $result . '*';
 
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update_time';";
         $result = $wpdb->get_var($sql);
@@ -86,23 +84,31 @@
         $ftp_user_pass = '.3$r{}1~yI'; // Password
 
         // set up basic connection
-        $conn_id = ftp_connect($ftp_server) or die("<span style='color:#FF0000'><h2>Couldn't connect to $ftp_server</h2></span>");
+        //need to test if we can connect to the ftp server
 
-        // login with username and password, or give invalid user message
-        $login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass) or die("<span style='color:#FF0000'><h2>You do not have access to this ftp server!</h2></span>");
-
-        // check connection
-        if ((!$conn_id) || (!$login_result)) exit;
+        $conn_id = ftp_connect($ftp_server);
+        if($conn_id == FALSE) {
+            mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_connect on site ' .  home_url());
+        } else {
         
-        //upload the actual file
-        $uploadFileName = get_option('copyright_option_text','default.dd');
-        $upload = ftp_fput($conn_id, $uploadFileName, $fSetup, FTP_BINARY);  // upload the file
-         
-        ftp_close($conn_id); // close the FTP stream   
+            // login with username and password
+            $login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
 
-        
+            if($login_result == FALSE) {
+                mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_login on site ' . home_url()); 
+            } else {
 
-        fclose($fSetup);
+                //upload the actual file
+                $uploadFileName = get_option('FTPFileName','default.dd');
+                $upload = ftp_fput($conn_id, $uploadFileName, $fSetup, FTP_BINARY);  // upload the file
+
+                if($upload == FALSE) mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_fput'); 
+                 
+                ftp_close($conn_id); // close the FTP stream   
+                fclose($fSetup); //close the temp file
+            }
+        }
+
     }
 
 
@@ -296,7 +302,7 @@
             settings_fields( 'Disk_Daddy_Plugin-Group' ); 
             do_settings_fields( 'Disk_Daddy_Plugin-Group', '' );
             echo '<p>Input filename to use when uploading data (somethingUnique.dd) - <input type="text" name="FTPFileName" value="' . get_option('FTPFileName', 'default.dd') .'" />';
-            echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry', '1979-09-12') .'" />';
+            echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry', '2020-12-31') .'" />';
             
             submit_button();
             echo '</div>';
