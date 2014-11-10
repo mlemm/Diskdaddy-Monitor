@@ -2,7 +2,7 @@
     /* 
     Plugin Name: Diskdaddy.com Web Monitor
     Plugin URI: http://www.diskdaddy.com 
-    Version: 1.6.4
+    Version: 1.6.5
     Author: Markus Lemm
     Description: Monitor page for last user login, page/post updates, wordpress version, updates, support expiry date
     Author URI: http://www.markuslemm.com
@@ -102,7 +102,7 @@
                 $uploadFileName = get_option('FTPFileName','default.dd');
                 $upload = ftp_fput($conn_id, $uploadFileName, $fSetup, FTP_BINARY);  // upload the file
 
-                if($upload == FALSE) mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_fput'); 
+                if($upload == FALSE) mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_fput ' . home_url()); 
                  
                 ftp_close($conn_id); // close the FTP stream   
                 fclose($fSetup); //close the temp file
