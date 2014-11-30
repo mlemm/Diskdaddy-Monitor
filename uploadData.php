@@ -5,15 +5,36 @@
 */
 
 //get the post request and create a file called testing.dd to display the data
+	//add a check key to make sure that the data is not an attack
 
-	$fileHandle = fopen("testing.dd", "wb");
+	
+	$checkString = "BqXfd6moMeDiskDaddypVDJzo7k7X";
+	$theOutputString = "";
+	$theFilename = "testing.dd"; //incase someone forgets to include the filename
 
-	print_r($_POST);
+	$securityCheck = false;
 
-	fwrite($fileHandle, "this is the post data\n");
-	 foreach ($_POST as $key => $value) {
-	 	fwrite($fileHandle, $key . " : " . $value . "\n");
-	 }
+	foreach ($_POST as $key => $value) {
+	 	$theOutputString .= $key . "|" . $value . "*";
+	 	if($key == "file_name") $theFilename = $value;
+	 	if($key == "disk_daddy_key" && $value == $checkString) $securityCheck = true;
+
+	}
+
+	//trim off the last *
+	$theOutputString = rtrim($theOutputString, "*");
+
+	if($securityCheck == false) {
+		//someone as tried to access this to upload a bad file
+		//send an email
+		mail("info@diskdaddy.com", "Illegal data upload attempt on Diskdaddy Monitor", "Someone did not provide the correct check string to upload data to the Monitor! - POST Data :" . $_POST);
+		exit(-1);
+	}
+
+
+	$fileHandle = fopen($theFilename, "wb");
+
+	fwrite($fileHandle, $theOutputString);
 
 	fclose($fileHandle);
 

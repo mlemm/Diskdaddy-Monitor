@@ -2,23 +2,21 @@
     /* 
     Plugin Name: Diskdaddy.com Web Monitor
     Plugin URI: http://www.diskdaddy.com 
-    Version: 1.8.1
+    Version: 1.8.5
     Author: Markus Lemm
-    Description: Monitor page for last user login, page/post updates, wordpress version, updates, support expiry date - cURL
+    Description: Monitor page for last user login, page/post updates, wordpress version, updates, support expiry date - uses cURL
     Author URI: http://www.markuslemm.com
     */
 
     /* 
-        Markus Lemm - mlemm@diskdaddy.com - 260444
+        Markus Lemm - mlemm@diskdaddy.com - 260444 - for diskdaddy.com
         Created November 3, 2014
     */
 
-        /*
-            Submit thru html get method - simple and fast
-            cURL to make this work - add cURL test button
-        */
 
-        /* CRON */
+    //Global Variables
+    //checkString used for upload security
+    $checkString = "BqXfd6moMeDiskDaddypVDJzo7k7X";
 
     function Disk_Daddy_Plugin_upload() {
 
@@ -27,8 +25,9 @@
         //get access to database
         global $wpdb;
 
+        $fileOutput = "disk_daddy_key=" . $checkString . "&";
 
-        $fileOutput = 'support_contract_expiry=' . get_option('Support_Contract_Expiry', '2020-12-31') . "&";
+        $fileOutput .= 'support_contract_expiry=' . get_option('Support_Contract_Expiry', '2020-12-31') . "&";
 
         $fileOutput .= 'file_name=' . get_option('FTPFileName', 'testing.dd') . "&";
 
@@ -44,8 +43,6 @@
         $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update';";
         $result = $wpdb->get_var($sql);
         
-       // $fileOutput .= "last_post_update=". urlencode("http://markuslemm.com/wordpress-cron/") . "&";
-     //   $fileOutput .= "last_post_update=http://markuslem.com/wordpress-cron/&";
         $fileOutput .= "last_post_update=" . preg_replace('#^https?://#','', $result) . "&";
 
 
@@ -81,103 +78,11 @@
         //init curl
 
         $curlStuff = curl_init();
-        //curl_setopt($curlStuff, CURLOPT_URL, "http://www.diskdaddy.com/Monitor/uploadData.php?" . $fileOutput);
         curl_setopt($curlStuff, CURLOPT_URL, "http://www.diskdaddy.com/Monitor/uploadData.php");
         curl_setopt($curlStuff, CURLOPT_POST, 1);
         curl_setopt($curlStuff, CURLOPT_POSTFIELDS , $fileOutput);
         curl_exec($curlStuff);
         curl_close($curlStuff);
-
-
-
-
-
-/*
-        //ftp the info
-        
-        //create temp file
-        $fSetup = tmpfile();
-        //put in the db info
-
-        $fileOutput = 'support_contract_expiry|' . get_option('Support_Contract_Expiry', '2020-12-31') . '*';
-
-        $result = time();
-        $fileOutput .= 'last_ftp_upload_time|' . $result . '*';
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update_time';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'last_post_update_time|' . $result . '*';
-        
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_post_update';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'last_post_update|' . $result . '*';
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login_time';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'last_user_login_time|' . $result . '*';
-        
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'last_user_login';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'last_user_login|' . $result . '*';
-
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'site_address';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'site_address|' . $result . '*';
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'wordpress_version';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'wordpress_version|' . $result . '*';
-
-        $sql = "SELECT the_value FROM wp_diskdaddy_plugin_variables WHERE the_key = 'plugins_to_update';";
-        $result = $wpdb->get_var($sql);
-        
-        $fileOutput .= 'plugins_to_update|' . $result;
-
-        fwrite($fSetup, $fileOutput);
-
-        fseek($fSetup,0);
-
-        //upload to the ftp server
-        $ftp_server = 'ftp.diskdaddy-development.com'; // Address of FTP server.
-        $ftp_user_name = 'plugin'; // Username
-        $ftp_user_pass = '.3$r{}1~yI'; // Password
-
-        // set up basic connection
-        //need to test if we can connect to the ftp server
-
-        $conn_id = ftp_connect($ftp_server);
-        if($conn_id == FALSE) {
-            mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_connect on site ' .  home_url());
-        } else {
-        
-            // login with username and password
-            $login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
-
-            if($login_result == FALSE) {
-                mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_login on site ' . home_url()); 
-            } else {
-
-                //upload the actual file
-                $uploadFileName = get_option('FTPFileName','default.dd');
-                $upload = ftp_fput($conn_id, $uploadFileName, $fSetup, FTP_BINARY);  // upload the file
-
-                if($upload == FALSE) mail('mlemm@diskdaddy.com', 'Disk Daddy Web Monitor Error', 'Got an error on ftp_fput ' . home_url()); 
-                 
-                ftp_close($conn_id); // close the FTP stream   
-                fclose($fSetup); //close the temp file
-            }
-        }
-
-        */
 
     }
 
@@ -375,12 +280,16 @@
             echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry', '2020-12-31') .'" />';
             
             submit_button();
+
+            echo '<p><h2>Server Information</h2></p>';
             
             if(function_exists('curl_version')) {
                 echo '<h3 style="color:green"> cURL is enabled on this server</h3>';
             } else {
                 echo '<h3 style="color:red"> cURL is NOT enabled on this server</h3>';
             }
+
+
             echo '</div>';
         } else {
 
@@ -404,19 +313,23 @@
 
         global $wpdb;
 
-        //if there are any plugins that need to be updated then this them here
-        if(count($transient->response)) {
-            //update the db
-            //echo 'Size of the array is ' . count($transient->response);
-            $number_of_plugins_to_update = count($transient->response);
-            $sql = "UPDATE wp_diskdaddy_plugin_variables SET the_value = '$number_of_plugins_to_update' WHERE the_key = 'plugins_to_update';";
-            $result = $wpdb->query($sql);
-        }
-        
-       
+        //check how many plugins need be updated
+        //if(count($transient->response)) $number_of_plugins_to_update = count($transient->response); else $number_of_plugins_to_update = 0;
+        $number_of_plugins_to_update = count($transient->response);
+
+        $sql = "UPDATE wp_diskdaddy_plugin_variables SET the_value = '$number_of_plugins_to_update' WHERE the_key = 'plugins_to_update';";
+        $result = $wpdb->query($sql);
+
+        //check and update the wordpress version while we are here
+        $current_version = get_bloginfo('version');
+        $sql = "UPDATE wp_diskdaddy_plugin_variables SET the_value = '$current_version' WHERE the_key = 'wordpress_version';";
+        $result = $wpdb->query($sql);
+
+               
         return $transient;
     }
 
+    //keep variables in the wordpress dashboard
     function Disk_Daddy_Plugin_register_variables() {
         register_setting('Disk_Daddy_Plugin-Group', 'FTPFileName');
         register_setting('Disk_Daddy_Plugin-Group', 'Support_Contract_Expiry');
