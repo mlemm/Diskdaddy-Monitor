@@ -1,8 +1,8 @@
 <?php  
     /* 
     Plugin Name: Diskdaddy.com Web Monitor
-    Plugin URI: http://www.diskdaddy.com 
-    Version: 1.8.5
+    Plugin URI: http://markuslemm.com/projects/wordpress-monitor
+    Version: 1.8.9
     Author: Markus Lemm
     Description: Monitor page for last user login, page/post updates, wordpress version, updates, support expiry date - uses cURL
     Author URI: http://www.markuslemm.com
@@ -14,10 +14,6 @@
     */
 
 
-    //Global Variables
-    //checkString used for upload security
-    $checkString = "BqXfd6moMeDiskDaddypVDJzo7k7X";
-
     function Disk_Daddy_Plugin_upload() {
 
         //Now cURL
@@ -25,7 +21,7 @@
         //get access to database
         global $wpdb;
 
-        $fileOutput = "disk_daddy_key=" . $checkString . "&";
+        $fileOutput = "disk_daddy_key=" . get_option('disk_daddy_key', 'diskdaddy') . "&";
 
         $fileOutput .= 'support_contract_expiry=' . get_option('Support_Contract_Expiry', '2020-12-31') . "&";
 
@@ -78,8 +74,9 @@
         //init curl
 
         $curlStuff = curl_init();
-        curl_setopt($curlStuff, CURLOPT_URL, "http://www.diskdaddy.com/Monitor/uploadData.php");
+        curl_setopt($curlStuff, CURLOPT_URL, "https://www.diskdaddy.com/Monitor/uploadData.php");
         curl_setopt($curlStuff, CURLOPT_POST, 1);
+        curl_setopt($curlStuff, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt($curlStuff, CURLOPT_POSTFIELDS , $fileOutput);
         curl_exec($curlStuff);
         curl_close($curlStuff);
@@ -223,7 +220,9 @@
 
         if( $timestamp == false ){
             //Schedule the event for right now, then to repeat daily
-            wp_schedule_event( time(), 'daily', 'Disk_Daddy_Plugin_upload_hook' );
+            $returnedResult = wp_schedule_event( time(), 'daily', 'Disk_Daddy_Plugin_upload_hook' );
+           // if($returnedResult == false)   
+            mail("mlemm@diskdaddy.com", "got an error trying to init the cron event ", "the result " . $returnedResult . " is rturn");
         }
         
         
@@ -278,6 +277,7 @@
             do_settings_fields( 'Disk_Daddy_Plugin-Group', '' );
             echo '<p>Input filename to use when uploading data (somethingUnique.dd) - <input type="text" name="FTPFileName" value="' . get_option('FTPFileName', 'default.dd') .'" />';
             echo '<p>Input date that support agreement expires (1979-12-31) - <input type="date" name="Support_Contract_Expiry" value="' . get_option('Support_Contract_Expiry', '2020-12-31') .'" />';
+            echo '<p>Input the secret diskdaddy key to be able to upload to our server - <input type="text" name="disk_daddy_key" value="' . get_option('disk_daddy_key', 'SecretKEY') .'" />';
             
             submit_button();
 
@@ -333,7 +333,7 @@
     function Disk_Daddy_Plugin_register_variables() {
         register_setting('Disk_Daddy_Plugin-Group', 'FTPFileName');
         register_setting('Disk_Daddy_Plugin-Group', 'Support_Contract_Expiry');
-        
+        register_setting('Disk_Daddy_Plugin-Group', 'disk_daddy_key');        
     }
 
 

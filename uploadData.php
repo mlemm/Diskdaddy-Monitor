@@ -24,13 +24,13 @@
 	//trim off the last *
 	$theOutputString = rtrim($theOutputString, "*");
 
+
 	if($securityCheck == false) {
 		//someone as tried to access this to upload a bad file
 		//send an email
-		mail("info@diskdaddy.com", "Illegal data upload attempt on Diskdaddy Monitor", "Someone did not provide the correct check string to upload data to the Monitor! - POST Data :" . $_POST);
+		mail("mlemm@diskdaddy.com", "Illegal data upload attempt on Diskdaddy Monitor", "Someone did not provide the correct check string to upload data to the Monitor!");
 		exit(-1);
 	}
-
 
 	$fileHandle = fopen($theFilename, "wb");
 
